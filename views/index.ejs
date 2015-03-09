@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+      <link rel='stylesheet' href='/stylesheets/toastr.css' />
+  </head>
+  <body>
+
+  <form id="login">
+      <input type="email" id="email" placeholder="Digite seu e-mail">
+      <input type="password" id="senha">
+      <input type="text" id="categoria" placeholder="Categoria de seu interesse">
+      <input type="submit" value="Login">
+  </form>
+
+  <div id="area-de-novo-produto">
+        <h1>Novo Produto</h1>
+      <form id="novo_produto">
+          <input id="nome" type="text" placeholder="Nome do Produto">
+          <input id="preco" type="number" placeholder="Preço do Produto">
+          <input type="submit" value="Cadastrar">
+      </form>
+  </div>
+
+    <h1>&Uacute;ltimo Produto Dispon&iacute;vel</h1>
+    <div id="ultimo-produto-disponivel"></div>
+
+  <h1>Todos os Produtos</h1>
+  <div id="todos-os-produtos"></div>
+
+  <script src="/javascripts/jquery.js"></script>
+  <script src="/javascripts/toastr.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+      $(function(){
+
+          var socket = io.connect('http://localhost:3000');
+
+          socket.on('connect', function(){
+              toastr.info('Conectado ao servidor!');
+          });
+
+          socket.on('reconnect', function(){
+              toastr.info('Reconectado ao servidor!');
+          });
+
+          socket.on('connecting', function(){
+              toastr.info('Conectando ao servidor...');
+          });
+
+          socket.on('reconnecting', function(){
+              toastr.info('Reconectando ao servidor...');
+          });
+
+          socket.on('disconnect', function(){
+              toastr.warning('Desconectado do servidor!');
+          });
+
+          socket.on('connect_failed', function(){
+              toastr.error('Não foi possível conectar-se ao servidor!');
+          });
+
+          socket.on('reconnect_failed', function(){
+              toastr.error('Não foi possível reconectar-se ao servidor!');
+          });
+
+          socket.on('error', function(){
+              toastr.error('Houve um error desconhecido!');
+          });
+
+          socket.on('logout', function(email){
+              toastr.error('O usuario ' + email + ' efetou logout!');
+              $(".produto_a_venda_"+email.replace("@", "_")).remove();
+
+          });
+
+          $("#novo_produto").submit(function(event){
+              event.preventDefault();
+              var nomeField = $("#nome");
+              var precoField = $("#preco");
+
+              var nome = nomeField.val();
+              var preco = precoField.val();
+              var produto = {"nome": nome, "preco": preco};
+              socket.emit("novo-produto", produto);
+
+              toastr.success('Produto cadastrado com sucesso!');
+
+              nomeField.val('');
+              precoField.val('');
+
+          });
+
+          socket.on('novo-produto-disponivel', function(produto){
+              var conteudo = produto.nome + ' por ' + produto.preco + ' - ' + produto.email;
+              var divClass = 'produto_a_venda_'+produto.email.replace("@", "_");
+              var div = $("<div class='"+divClass+"'/>");
+              div.html(conteudo);
+
+              $('#ultimo-produto-disponivel').html(div);
+              $('#todos-os-produtos').append(div.clone());
+
+          });
+
+          $("#login").submit(function(event){
+              event.preventDefault();
+              var email = $('#email').val();
+              var senha = $('#senha').val();
+              var categoria = $('#categoria').val();
+
+              var usuario = {
+                  'email': email,
+                  'senha': senha,
+                  'categoria': categoria
+              };
+
+              socket.emit("login", usuario, function(dados){
+                  if(dados.sucesso){
+                      $('#login').hide();
+                      $('#area-de-novo-produto').show();
+                      toastr.success(dados.mensagem);
+
+                  }else{
+                      toastr.error(dados.mensagem);
+
+                  }
+
+              });
+
+          });
+
+      });
+  </script>
+  </body>
+</html>
