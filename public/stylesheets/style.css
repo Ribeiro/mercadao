@@ -9,3 +9,16 @@ a {
 #area-de-novo-produto{
     display: none;
 }
+
+#usuario-logado{
+    display: none;
+}
+
+.pull-right .dropdown-menu:after {
+    left: auto;
+    right: 13px;
+}
+.pull-right .dropdown-menu {
+    left: auto;
+    right: 0;
+}

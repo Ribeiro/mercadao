@@ -15,6 +15,8 @@ var app = express();
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
+
+//setting express.js http server port
 app.set('port', process.env.PORT || 3000);
 
 // uncomment after placing your favicon in /public
@@ -61,11 +63,14 @@ app.use(function(err, req, res, next) {
   });
 });
 
-
+//creating http server from express.js upon node.js
 var server = http.createServer(app);
 var io = require('socket.io').listen(server);
+
+// retrieving port from app.set('port', process.env.PORT || 3000);
 var port = app.get('port');
 
+//start listening to port defined on express.js
 server.listen(port, function(){
     console.log('Express server listening on port ' + port);
 });
@@ -79,12 +84,31 @@ server.listen(port, function(){
 //otimização para produção - envio/recebimento de dados compactados
 //io.enable('browser client gzip');
 
+var validaSenha = function(senha){
+    if(senha.length < 6){
+        throw 'Senha muito curta!';
+    }
+
+}
+
+var validaEmail = function(email){
+    var pattern = new RegExp(/^[+a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/i);
+    if(!pattern.test(email)){
+        throw 'Email inválido!';
+    }
+
+}
+
+var validaCategoria = function(categoria){
+    if(categoria === 'Selecione a Categoria'){
+        throw 'Selecione uma categoria!';
+    }
+}
 
 
 io.on('connection', function(client){
 
     client.on('disconnect', function(){
-
         if(client.usuario){
             console.log('Usuario disconectou : ' + client.usuario.email);
             client.broadcast.emit('logout', client.usuario.email);
@@ -109,12 +133,15 @@ io.on('connection', function(client){
     });
 
     client.on('login', function(usuario, callback){
-        if(usuario.senha.length >= 6){
+        try {
+            validaEmail(usuario.email);
+            validaSenha(usuario.senha);
+            validaCategoria(usuario.categoria);
 
             //setando o usuario como propriedade do socket cliente para usar no evento 'novo-produto'
             client.usuario = usuario;
 
-            //adicionando o usuario À uma categoria conforme o login
+            //adicionando o usuario a uma categoria conforme o login
             client.join(usuario.categoria);
 
             callback({
@@ -122,10 +149,10 @@ io.on('connection', function(client){
                 mensagem: "Logado como " + usuario.email + " na categoria " + usuario.categoria
             });
 
-        }else {
+        }catch(err) {
             callback({
                 sucesso:false,
-                mensagem: "Senha muito curta!"
+                mensagem: err
             });
 
         }

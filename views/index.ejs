@@ -2,36 +2,58 @@
 <html>
   <head>
     <title><%= title %></title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
-      <link rel='stylesheet' href='/stylesheets/toastr.css' />
+        <link rel='stylesheet' href='/stylesheets/style.css' />
+        <link rel='stylesheet' href='/stylesheets/toastr.css' />
+        <link rel='stylesheet' href='/stylesheets/bootstrap.css' />
+        <link rel='stylesheet' href='/stylesheets/bootstrap-responsive.css' />
   </head>
   <body>
 
-  <form id="login">
-      <input type="email" id="email" placeholder="Digite seu e-mail">
-      <input type="password" id="senha">
-      <input type="text" id="categoria" placeholder="Categoria de seu interesse">
-      <input type="submit" value="Login">
-  </form>
+  <div id="container_usuario_logado">
+      <div id="usuario-logado"></div>
+  </div>
+
+  <div>
+      <form id="login">
+              <div class="well carousel-search hidden-phone">
+                  <input type="email" id="email" placeholder="Digite seu e-mail">
+                  <input type="password" id="senha" placeholder="Digite sua senha">
+                  <div class="btn-group">
+                      <a class="btn dropdown-toggle btn-select" data-toggle="dropdown" href="#">Selecione a Categoria<span class="caret"></span></a>
+                      <ul class="dropdown-menu">
+                          <li><a href="#">Esportes</a></li>
+                          <li><a href="#">Eletrônicos</a></li>
+                          <li><a href="#">Veículos</a></li>
+                      </ul>
+                      <input type="submit" value="Login" class="btn btn-info">
+                  </div>
+              </div>
+
+      </form>
+  </div>
 
   <div id="area-de-novo-produto">
         <h1>Novo Produto</h1>
       <form id="novo_produto">
           <input id="nome" type="text" placeholder="Nome do Produto">
           <input id="preco" type="number" placeholder="Preço do Produto">
-          <input type="submit" value="Cadastrar">
+          <input type="submit" value="Cadastrar" class="btn btn-info">
       </form>
   </div>
 
-    <h1>&Uacute;ltimo Produto Dispon&iacute;vel</h1>
+  <h1>&Uacute;ltimo Produto Dispon&iacute;vel</h1>
     <div id="ultimo-produto-disponivel"></div>
 
+  <br />
+
   <h1>Todos os Produtos</h1>
-  <div id="todos-os-produtos"></div>
+    <div id="todos-os-produtos"></div>
 
   <script src="/javascripts/jquery.js"></script>
+  <script src="/javascripts/bootstrap.js"></script>
   <script src="/javascripts/toastr.js"></script>
   <script src="/socket.io/socket.io.js"></script>
+
   <script>
       $(function(){
 
@@ -83,6 +105,7 @@
               var nome = nomeField.val();
               var preco = precoField.val();
               var produto = {"nome": nome, "preco": preco};
+
               socket.emit("novo-produto", produto);
 
               toastr.success('Produto cadastrado com sucesso!');
@@ -107,7 +130,7 @@
               event.preventDefault();
               var email = $('#email').val();
               var senha = $('#senha').val();
-              var categoria = $('#categoria').val();
+              var categoria = $('.btn-select').text().trim();
 
               var usuario = {
                   'email': email,
@@ -116,18 +139,28 @@
               };
 
               socket.emit("login", usuario, function(dados){
+                  var usuarioLogadoDiv = $('#usuario-logado');
+
+                  usuarioLogadoDiv.show();
                   if(dados.sucesso){
                       $('#login').hide();
                       $('#area-de-novo-produto').show();
-                      toastr.success(dados.mensagem);
+                      usuarioLogadoDiv.removeClass('alert alert-error').addClass('alert alert-success');
+                      usuarioLogadoDiv.html(dados.mensagem);
 
                   }else{
-                      toastr.error(dados.mensagem);
+                      usuarioLogadoDiv.removeClass('alert alert-success').addClass('alert alert-error');
+                      usuarioLogadoDiv.html(dados.mensagem);
 
                   }
 
               });
 
+          });
+
+          $(".dropdown-menu li a").click(function(){
+              var selText = $(this).text();
+              $(this).parents('.btn-group').find('.dropdown-toggle').html(selText+' <span class="caret"></span>');
           });
 
       });
